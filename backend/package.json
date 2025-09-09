@@ -4,7 +4,8 @@
   "main": "server.ts",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --watch src --exec ts-node server.ts",
+    "dev:fetch": "tsx watch src/tools/fetchServer.ts",
+    "dev:agent": "tsx watch src/tools/agentTool.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts"
@@ -20,12 +21,17 @@
     "@types/node": "^24.3.1",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
     "@playwright/mcp": "^0.0.36",
     "body-parse": "^0.1.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "groq-sdk": "^0.32.0",
+    "playwright": "^1.56.0-alpha-1756505518000",
+    "zod": "^3.25.76"
   }
 }
