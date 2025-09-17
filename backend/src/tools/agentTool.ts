@@ -15,7 +15,7 @@ const client = new Client({
 await client.connect(transport);
 
 const query =
-  "Search Amazon.in for 'laptop' and return top 5 products with rating above 4.0 and price between 40000-50000 INR.";
+  "Search Amazon.in for 'gaming-keyboard' and return top 5 products with rating above 4.0 and price between 1000-2000 INR.";
 
 const llm = new ModelMCP({
   model: "openai/gpt-oss-20b",

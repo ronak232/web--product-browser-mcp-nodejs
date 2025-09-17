@@ -1,4 +1,3 @@
-import { createConnection } from "@playwright/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -18,6 +17,7 @@ interface ScraperResult {
     price: number | null;
     rating: number | null;
     url: string;
+    image: string | null;
   }>;
   count: number;
 }
@@ -50,104 +50,104 @@ server.registerTool(
   }) => {
     let browser;
     try {
-      browser = await chromium.launch({ headless: false });
+      browser = await chromium.launch({ headless: true });
       const context = await browser.newContext({
         userAgent:
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
       });
       const page = await context.newPage();
 
-      await page.goto("https://www.amazon.in", {
-        waitUntil: "domcontentloaded",
-        timeout: 60000,
-      });
-      // Fill and submit search
-      await page.locator("#twotabsearchtextbox").fill("gaming keyboard");
+      const url = `https://www.amazon.in/s?k=${encodeURIComponent(search)}`;
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
       const results = page.locator(
         'div.s-result-item[data-component-type="s-search-result"]'
       );
-      await Promise.all([
-        // Prefer element-based wait rather than brittle URL pattern
-        results.first().waitFor({ timeout: 45000 }),
-        page.locator("#nav-search-submit-button").click(),
-      ]);
-
       await results.first().waitFor({ timeout: 45000 });
 
-      const scraperScript = `
-      (() => {
-        const limit = ${limit};
-        const minPrice = ${minPrice};
-        const maxPrice = ${maxPrice};
-        const minRating = ${minRating};
+      const result = await page.evaluate(
+        ({ limit, minPrice, maxPrice, minRating }) => {
+          const items: ScraperResult["items"] = [];
+          const nodes = Array.from(
+            document.querySelectorAll(
+              "div[data-asin][data-component-type='s-search-result']"
+            )
+          );
 
-
-        const normalizePrice = (text) => {
-          if (!text) return null;
-          const t = text.replace(/[^0-9.,]/g, '').replace(/,/g, '');
-          const n = parseFloat(t);
-          return Number.isFinite(n) ? n : null;
-        };
-        const normalizeRating = (text) => {
-          if (!text) return null;
-          const m = text.match(/([0-9]+(\\.[0-9]+)?)/);
-          return m ? parseFloat(m[0]) : null;
-        };
-
-
-        const items = [];
-        const seen = new Set();
-        const candidates = Array.from(document.querySelectorAll("[data-asin]:not([data-asin=''])"));
-
-
-        for (const el of candidates) {
-          const asin = el.getAttribute('data-asin').trim();
-          if (!asin || seen.has(asin)) continue;
-          seen.add(asin);
-
-
-          if (el.querySelector('[data-component-type="s-sponsored-result"]')) continue;
-
-
-          const titleEl = el.querySelector('h2 a span') || el.querySelector('h2 a');
-          const title = titleEl ? (titleEl.innerText || titleEl.textContent || '').trim() : null;
-
-
-          const linkEl = el.querySelector('h2 a') || el.querySelector('a.a-link-normal');
-          let url = linkEl ? (linkEl.href || linkEl.getAttribute('href')) : null;
-          if (url && url.startsWith('/')) url = location.origin + url;
-
-
-          let priceText = null;
-          const priceEl = el.querySelector('.a-price .a-offscreen');
-          if (priceEl) {
-            priceText = priceEl.innerText;
-          } else {
-            const whole = el.querySelector('.a-price-whole');
-            const frac = el.querySelector('.a-price-fraction');
-            if (whole) priceText = (whole.innerText || '') + (frac ? '.' + frac.innerText : '');
-          }
-          const price = normalizePrice(priceText);
-
-
-          const ratingEl = el.querySelector('.a-icon-alt') || el.querySelector('span[aria-label*="out of 5 stars"]');
-          const rating = normalizeRating(ratingEl ? (ratingEl.innerText || ratingEl.getAttribute('aria-label')) : null);
-
-
-          if (!title || !url || price == null) continue;
-          
-          if (price >= minPrice && price <= maxPrice && (rating === null || rating >= minRating)) {
-            items.push({ asin, title, price, rating, url });
+          for (const node of nodes) {
             if (items.length >= limit) break;
+
+            try {
+              const asin = (node as HTMLElement).dataset.asin?.trim();
+              if (!asin) continue;
+
+              // Skip sponsored products
+              if (
+                node.querySelector('[data-component-type="s-sponsored-result"]')
+              )
+                continue;
+
+              const titleEl = node.querySelector(
+                "h2 a span, h2 span, .a-size-medium"
+              );
+              const linkEl = node.querySelector("h2 a, a[href]");
+              const imgEl = node.querySelector("img.s-image, img");
+              const priceEl = node.querySelector(
+                ".a-price .a-offscreen, .price, .product-price, [data-price], ._price"
+              );
+              const ratingEl = node.querySelector(
+                ".a-icon-alt, .rating, .stars, .product-rating, i.a-icon-star span"
+              );
+
+              const title = titleEl?.textContent?.trim() ?? null;
+              if (!title) continue; // Essential field
+
+              let href = linkEl?.getAttribute("href") ?? null;
+              if (href && href.startsWith("/")) {
+                href = new URL(href, location.origin).href;
+              }
+
+              const image =
+                imgEl?.getAttribute("src") ||
+                imgEl?.getAttribute("data-src") ||
+                null;
+
+              // Use robust regex matching as a fallback for price and rating
+              const textContent = (node as HTMLElement).innerText ?? "";
+              const priceText =
+                priceEl?.textContent ??
+                textContent.match(/₹\s*([\d,]+(?:\.\d+)?)/)?.[1] ??
+                null;
+              const ratingText =
+                ratingEl?.textContent ??
+                textContent.match(/([0-9]+(?:\.[0-9]+)?)\s*out of 5/)?.[1] ??
+                null;
+
+              const price = priceText
+                ? parseFloat(priceText.replace(/,/g, ""))
+                : null;
+              const rating = ratingText ? parseFloat(ratingText) : null;
+
+              // Apply filters
+              if (price !== null && (price < minPrice || price > maxPrice))
+                continue;
+              if (rating !== null && rating < minRating) continue;
+
+              items.push({
+                asin,
+                title,
+                price,
+                rating,
+                url: href!,
+                image,
+              });
+            } catch {
+              // Ignore any single card parsing failures and continue
+            }
           }
-        }
-
-
-        return { items, count: items.length };
-      })()
-    `;
-
-      const result = (await page.evaluate(scraperScript)) as ScraperResult;
+          return { items, count: items.length };
+        },
+        { limit, minPrice, maxPrice, minRating }
+      );
 
       // 4. Add screenshot for debugging if no results are found
       if (result.count === 0) {
@@ -157,7 +157,7 @@ server.registerTool(
           `No items found. Saved a screenshot for debugging to: ${path}`
         );
       }
-      await page.close();
+
       await browser.close();
       return {
         content: [
@@ -168,7 +168,7 @@ server.registerTool(
           },
         ],
       };
-    } catch (error) {
+    } catch (error: any) {
       if (browser) await browser.close();
       console.error("An error occurred during scraping:", error);
       return {
@@ -176,7 +176,11 @@ server.registerTool(
           {
             name: "result",
             type: "text",
-            text: JSON.stringify({ items: [], count: 0, error: error.message }),
+            text: JSON.stringify({
+              items: [],
+              count: 0,
+              error: error.message,
+            }),
           },
         ],
         isError: true,
