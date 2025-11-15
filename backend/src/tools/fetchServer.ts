@@ -3,11 +3,12 @@ import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { chromium } from "playwright";
 
-console.log("mcp-server executed...");
+// console.log("mcp-server executed...");
 
 const server = new McpServer({
   name: "mcp-web-server",
   version: "1.0.0",
+  title: "playwright-server",
 });
 
 interface ScraperResult {
@@ -80,7 +81,6 @@ server.registerTool(
               const asin = (node as HTMLElement).dataset.asin?.trim();
               if (!asin) continue;
 
-              // Skip sponsored products
               if (
                 node.querySelector('[data-component-type="s-sponsored-result"]')
               )
@@ -91,9 +91,11 @@ server.registerTool(
               );
               const linkEl = node.querySelector("h2 a, a[href]");
               const imgEl = node.querySelector("img.s-image, img");
-              const priceEl = node.querySelector(
-                ".a-price .a-offscreen, .price, .product-price, [data-price], ._price"
-              );
+              const priceEl =
+                node.querySelector(
+                  ".a-row [data-cy='price-recipe'] .a-price, .a-offscreen"
+                ) || node.querySelector(".a-offscreen");
+
               const ratingEl = node.querySelector(
                 ".a-icon-alt, .rating, .stars, .product-rating, i.a-icon-star span"
               );
@@ -111,7 +113,6 @@ server.registerTool(
                 imgEl?.getAttribute("data-src") ||
                 null;
 
-              // Use robust regex matching as a fallback for price and rating
               const textContent = (node as HTMLElement).innerText ?? "";
               const priceText =
                 priceEl?.textContent ??
@@ -123,7 +124,9 @@ server.registerTool(
                 null;
 
               const price = priceText
-                ? parseFloat(priceText.replace(/,/g, ""))
+                ? parseFloat(
+                    priceText.replace(/[^0-9.,]/g, "").replace(/,/g, "")
+                  )
                 : null;
               const rating = ratingText ? parseFloat(ratingText) : null;
 
@@ -141,22 +144,13 @@ server.registerTool(
                 image,
               });
             } catch {
-              // Ignore any single card parsing failures and continue
+              throw new Error("Something wrong happened!");
             }
           }
           return { items, count: items.length };
         },
         { limit, minPrice, maxPrice, minRating }
       );
-
-      // 4. Add screenshot for debugging if no results are found
-      if (result.count === 0) {
-        const path = "debug_screenshot.png";
-        await page.screenshot({ path, fullPage: true });
-        console.log(
-          `No items found. Saved a screenshot for debugging to: ${path}`
-        );
-      }
 
       await browser.close();
       return {

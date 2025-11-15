@@ -6,8 +6,8 @@
   "scripts": {
     "dev:fetch": "tsx watch src/tools/fetchServer.ts",
     "dev:agent": "tsx watch src/tools/agentTool.ts",
+    "start": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],

@@ -1,0 +1,123 @@
+/* Styles for SearchCard component */
+.search-root {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Inter, sans-serif;
+}
+
+.search-hero {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.search-hero h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.search-hero p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-field {
+  position: relative;
+  flex: 1 1 70%;
+}
+.search-input {
+  width: 100%;
+  padding: 14px 16px;
+  padding-left: 40px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  font-size: 16px;
+  outline: none;
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.search-btn {
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+.search-btn:hover:not(:disabled),
+.search-btn:focus:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  background: linear-gradient(90deg, var(--primary-2), var(--primary));
+}
+
+.results-count {
+  margin-bottom: 15px;
+  color: #374151;
+}
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.product-card-item {
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+  padding: 12px;
+}
+.product-card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 640px) {
+  .search-bar {
+    flex-direction: column;
+  }
+  .search-field {
+    flex: 1 1 100%;
+  }
+  .search-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}

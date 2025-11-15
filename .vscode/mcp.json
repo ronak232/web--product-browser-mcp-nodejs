@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "web-scrapper-mcp-agent": {
+      "type": "stdio",
+      "command": "npx tsx G:/computer science/Projects/web-agent-product-price/backend/src/tools/fetchServer.ts",
+      "args": [
+        "-y",
+        "tsx",
+      ]
+    }
+  },
+  "inputs": []
+}
