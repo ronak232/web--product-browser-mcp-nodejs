@@ -98,6 +98,22 @@ export async function callMCPClient(query: string) {
 
     console.log(`Display limit: ${displayLimit}`);
 
+    // --- Smart Price Range Enforcement ---
+    // If the LLM set a maxPrice but no meaningful minPrice (i.e. 0 or undefined),
+    // it usually means the user said "under X" or "below X".
+    // We apply a smart lower floor of 50% of maxPrice so results are close to budget.
+    // e.g. "under 3500" → minPrice becomes 1750, so we only show ₹1750–₹3500.
+    for (const step of plan) {
+      if (step.tool === 'product-scraper' && step.args) {
+        const { maxPrice, minPrice } = step.args;
+        if (maxPrice && maxPrice > 0 && (!minPrice || minPrice === 0)) {
+          const smartMin = Math.round(maxPrice * 0.5);
+          step.args.minPrice = smartMin;
+          console.log(`Smart price floor applied: minPrice set to ₹${smartMin} (50% of maxPrice ₹${maxPrice})`);
+        }
+      }
+    }
+
     for (const step of plan) {
       console.log(`Calling tool: ${step.tool}`, step.args);
       const result: any = await client.callTool({

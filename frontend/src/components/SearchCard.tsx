@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import ProductCard from "./ProductCard";
 import DealCard from "./DealCard";
@@ -35,6 +35,31 @@ export default function SearchCard() {
   const [error, setError] = useState<string | null>(null);
   const [comparingProducts, setComparingProducts] = useState<Product[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+
+  // Load from session storage on mount
+  useEffect(() => {
+    const savedQuery = sessionStorage.getItem("search_query");
+    const savedResults = sessionStorage.getItem("search_results");
+
+    if (savedQuery) setQuery(savedQuery);
+    if (savedResults) {
+      try {
+        setResults(JSON.parse(savedResults));
+      } catch (e) {
+        console.error("Failed to parse search_results from sessionStorage", e);
+      }
+    }
+  }, []);
+
+  // Save to session storage on change
+  useEffect(() => {
+    sessionStorage.setItem("search_query", query);
+    if (results) {
+      sessionStorage.setItem("search_results", JSON.stringify(results));
+    } else {
+      sessionStorage.removeItem("search_results");
+    }
+  }, [query, results]);
 
   const handleProductClick = async (product: Product) => {
     try {
@@ -92,13 +117,17 @@ export default function SearchCard() {
 
   return (
     <div className="search-root">
+      {/* Hero Section */}
       <div className="search-hero">
-        <h2>
-          AI Product Search
-        </h2>
-        <p>Find Amazon products powered by AI</p>
+        <div className="hero-badge">
+          <span className="hero-badge-dot" />
+          Powered by AI
+        </div>
+        <h1>Find the Best Price,<br />Instantly.</h1>
+        <p>Search across Amazon &amp; Flipkart with natural language — just describe what you need and your budget.</p>
       </div>
 
+      {/* Search Bar */}
       <form
         className="search-bar"
         onSubmit={(e) => {
@@ -113,30 +142,42 @@ export default function SearchCard() {
             onChange={(e) => setQuery(e.target.value)}
             id="query"
             aria-label="Search for products"
-            placeholder="e.g., gaming keyboard under 5000"
+            placeholder="e.g., gaming keyboard under ₹3500"
             className="search-input"
           />
-          <span
-            className="search-icon"
-          >
-            🔍
-          </span>
+          <span className="search-icon">🔍</span>
         </div>
         <button type="submit" className="search-btn" disabled={loading} aria-label="Search">
-          {loading ? "Searching..." : "Search"}
+          {loading ? "Searching..." : "Search →"}
         </button>
       </form>
 
-      {loading && <p style={{ textAlign: "center", color: "#6b7280" }}>Loading... Please wait.</p>}
-      {error && <p style={{ textAlign: "center", color: "red" }}>Error: {error}</p>}
+      {/* Loading */}
+      {loading && (
+        <div className="loading-state">
+          <div className="loading-spinner" />
+          <p>Searching Amazon &amp; Flipkart for the best deals...</p>
+        </div>
+      )}
 
+      {/* Error */}
+      {error && <div className="error-state">⚠️ {error}</div>}
+
+      {/* Results */}
       {results && (
-        <div>
+        <div className="results-section">
+          {/* Best Deals Section */}
           <DealCard deals={results.items.filter(i => i.isBestDeal)} />
 
-          <h3 className="results-count" aria-live="polite" role="status">
-            Showing {results.count} of {results._totalAvailable || results.count} results
-          </h3>
+          {/* Results count header */}
+          <div className="results-header">
+            <p className="results-count">
+              Showing <strong>{results.count}</strong> of{" "}
+              <strong>{results._totalAvailable || results.count}</strong> results
+            </p>
+          </div>
+
+          {/* Product Grid */}
           <div className="results-grid">
             {results.items.map((item) => (
               <div key={item.asin} className="product-card-item">
@@ -145,11 +186,10 @@ export default function SearchCard() {
             ))}
           </div>
 
+          {/* Show More */}
           {results.hasMore && (
             <div className="show-more-container">
-              <p className="show-more-hint">
-                {results._extra?.length} more results available
-              </p>
+              <p className="show-more-hint">{results._extra?.length} more results available</p>
               <button
                 className="show-more-btn"
                 onClick={handleShowMore}

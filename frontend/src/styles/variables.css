@@ -1,20 +1,37 @@
-/* Theme variables and breakpoints - imported globally from index.css */
+/* Theme variables - Neon Dark Premium */
 :root {
-  --bg: #ffffff;
-  --text: #111827;
+  --bg: #0a0a12;
+  --bg-2: #0f0f1e;
+  --text: #e8eaf6;
   --muted: #6b7280;
-  --primary: #2563eb;
-  --primary-2: #4f46e5;
-  --card-bg: #ffffff;
-  --card-radius: 12px;
-  --shadow: 0 4px 10px rgba(0,0,0,.08);
-  --shadow-hover: 0 6px 16px rgba(0,0,0,.15);
-  --max-width: 960px;
+  --primary: #7c3aed;
+  --primary-2: #06b6d4;
+  --primary-3: #f472b6;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-radius: 16px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 8px 40px rgba(124, 58, 237, 0.3);
+  --max-width: 1100px;
   --gap: 20px;
+  --neon-purple: #7c3aed;
+  --neon-cyan: #06b6d4;
+  --neon-pink: #f472b6;
+  --neon-green: #10b981;
 }
 
-/* Breakpoints (mobile-first) */
-@media (min-width: 640px) { /* sm */ }
-@media (min-width: 768px) { /* md */ }
-@media (min-width: 1024px) { /* lg */ }
-@media (min-width: 1280px) { /* xl */ }
+@media (min-width: 640px) {
+  /* sm */
+}
+
+@media (min-width: 768px) {
+  /* md */
+}
+
+@media (min-width: 1024px) {
+  /* lg */
+}
+
+@media (min-width: 1280px) {
+  /* xl */
+}
