@@ -15,6 +15,7 @@ body {
   place-items: center;
   min-width: 100%;
   min-height: 100vh;
+  background: #1a1a1a;
 }
 
 h1 {

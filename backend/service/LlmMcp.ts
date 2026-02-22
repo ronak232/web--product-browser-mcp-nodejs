@@ -25,7 +25,7 @@ export class ModelMCP {
       User query: ${prompt}
       Available tools:
 
-      * product-scraper: { search: string, limit?: number, minPrice?: number,       maxPrice?: number, minRating?: number }
+      * product-scraper: { search: string, limit?: number, minPrice?: number, maxPrice?: number, minRating?: number, platform?: 'amazon' | 'flipkart' | 'all' }
         Output rules:
       * RETURN ONLY a valid JSON array (no explanation).
       * Each item: { "tool": "<tool-name>", "args": { ... } }.
@@ -34,12 +34,39 @@ export class ModelMCP {
       * Detect and interpret price ranges and ratings (e.g., under, between, above,4.5 stars).
       * Handle queries in any language and convert values appropriately.
       * If parameters are missing, omit them from args.
-      * Example: “Show me smartphones under ₹50,000 with at least 4.5 stars” →      [{"tool": "product-scraper", "args": {"search": "smartphones", "maxPrice:"50000, "minRating": 4.5}}].
+      * Example: "Show me smartphones under ₹50,000 with at least 4.5 stars" → [{"tool": "product-scraper", "args": {"search": "smartphones", "maxPrice": 50000, "minRating": 4.5}}].
           `,
         },
       ],
     });
 
     return llm.choices[0]?.message?.content ?? "";
+  };
+
+  compare = async (products: any[]) => {
+    const prompt = `
+      Compare the following products and provide a summary of Pros, Cons, and a "Best for" recommendation for each.
+      
+      Products:
+      ${JSON.stringify(products, null, 2)}
+      
+      Output Format (JSON Array):
+      [
+          {
+              "asin": "...",
+              "pros": ["pro1", "pro2"],
+              "cons": ["con1", "con2"],
+              "bestFor": "Target Audience/Usage (e.g. Competitive Gaming)"
+          }
+      ]
+      RETURN ONLY JSON.
+      `;
+
+    const llm = await this.modelProvider.chat.completions.create({
+      model: this.model,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    return llm.choices[0]?.message?.content ?? "[]";
   };
 }
