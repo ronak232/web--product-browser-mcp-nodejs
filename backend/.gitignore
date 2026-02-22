@@ -7,3 +7,4 @@ node_modules/
 /playwright/.cache/
 config.json
 .env
+debug_output/

@@ -52,13 +52,12 @@ h2 {
     display: flex;
     gap: 1.5rem;
     flex: 1;
-    overflow-x: auto;
 }
 
 .comparison-column {
     flex: 1;
     min-width: 250px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.939);
     border-radius: 12px;
     padding: 1rem;
     display: flex;
@@ -130,7 +129,6 @@ h2 {
 .comp-section ul li {
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
-    color: #e5e5e5;
     position: relative;
 }
 

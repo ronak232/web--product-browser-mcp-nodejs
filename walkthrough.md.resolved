@@ -1,0 +1,40 @@
+# Project Documentation Walkthrough
+
+I have created a comprehensive documentation suite for the "Web Agent Product Price Browser".
+
+## Key Improvements
+
+### 1. Root README.md
+I created a new [README.md](file:///g:/computer%20science/Projects/web-agent-product-price/README.md) at the project root which contains:
+- **Feature Highlights**: Multi-platform scraping, deal scoring, and product comparisons.
+- **Tech Stack Breakdown**: Detailed list of technologies used in both frontend and backend.
+- **Architecture Diagram**: A Mermaid diagram illustrating the flow between the Frontend, Backend, AI Agent, and MCP Server.
+- **Setup Guide**: Clear instructions for installation and running both server and client.
+
+### 2. Architecture Explanation
+The documentation specifically details the "Agentic" nature of the application:
+- How the Express backend invokes the AI agent.
+- How the agent acts as an MCP Client.
+- How the MCP Server uses Playwright for real-time scraping.
+
+### 3. Frontend README Update
+The boilerplate [README.md](file:///g:/computer%20science/Projects/web-agent-product-price/frontend/README.md) has been replaced with a clean version that points to the root documentation, preventing duplication.
+
+---
+
+## Technical Details
+
+The architecture diagram shows the following flow:
+```mermaid
+graph TD
+    User([User]) --> Frontend[React Frontend]
+    Frontend -->|API Request| Backend[Express Backend]
+    Backend -->|Natural Language| Agent[AI Agent Tool]
+    Agent -->|JSON Plan| MCP_Client[MCP Client]
+    MCP_Client -->|Stdio| MCP_Server[MCP Scraper Server]
+    MCP_Server -->|Playwright| Web[Amazon/Flipkart]
+    Web -->|HTML| MCP_Server
+    MCP_Server -->|Structured Data| Agent
+    Agent -->|Final Result| Backend
+    Backend -->|JSON Response| Frontend
+```

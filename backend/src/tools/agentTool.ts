@@ -71,10 +71,33 @@ export async function callMCPClient(query: string) {
   const planRaw = await llm.run(query);
   console.log("LLM plan raw:", planRaw);
 
-  let plan: { tool: string; args: any }[];
+  let plan: { tool: string; args: any; displayLimit?: number }[];
   let finalResult: any = null;
   try {
-    plan = JSON.parse(planRaw);
+    // Clean markdown wrapping if present
+    let cleaned = planRaw.trim();
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    }
+    plan = JSON.parse(cleaned);
+
+    // Extract displayLimit from LLM plan (first step)
+    let displayLimit = plan[0]?.displayLimit ?? 5;
+
+    // Server-side fallback: detect "best/top" superlative patterns in user query
+    const superlativeRegex = /\b(best|top|finest|greatest|leading|premium|ultimate)\b/i;
+    const queryLower = query.toLowerCase();
+    if (superlativeRegex.test(queryLower)) {
+      displayLimit = Math.min(displayLimit, 3);
+      console.log(`Superlative detected in query: "${query}" → displayLimit capped to 3`);
+    }
+
+    // Enforce hard caps
+    displayLimit = Math.min(displayLimit, 5); // NEVER more than 5
+    if (displayLimit < 1) displayLimit = 5;    // Fallback for bad LLM output
+
+    console.log(`Display limit: ${displayLimit}`);
+
     for (const step of plan) {
       console.log(`Calling tool: ${step.tool}`, step.args);
       const result: any = await client.callTool({
@@ -90,7 +113,7 @@ export async function callMCPClient(query: string) {
       }
     }
 
-    // Post-processing for Best Deals (moved inside try block, after tool loop)
+    // Post-processing for Best Deals
     if (finalResult && finalResult.items && Array.isArray(finalResult.items)) {
       finalResult.items = finalResult.items.map((item: any) => {
         // Calculate score: discount * 0.6 + rating * 8
@@ -109,6 +132,21 @@ export async function callMCPClient(query: string) {
           finalResult.items[i].isBestDeal = true;
         }
       }
+
+      // Enforce display limit: slice visible items, hold extras
+      const allItems = finalResult.items;
+      finalResult.items = allItems.slice(0, displayLimit);
+      finalResult.count = finalResult.items.length;
+      finalResult.displayLimit = displayLimit;
+
+      // If there are more items beyond the display limit, include them as _extra
+      if (allItems.length > displayLimit) {
+        finalResult._extra = allItems.slice(displayLimit);
+        finalResult._totalAvailable = allItems.length;
+        finalResult.hasMore = true;
+      } else {
+        finalResult.hasMore = false;
+      }
     }
   } catch (err) {
     console.error("Error in agentTool:", err);
@@ -120,6 +158,8 @@ export async function callMCPClient(query: string) {
   }
   return finalResult;
 }
+
+
 
 export async function findBetterAlternative(currentProduct: any, allProducts: any[]) {
   // Logic: Find product with higher rating and lower price

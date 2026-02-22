@@ -22,6 +22,10 @@ interface Product {
 interface ScraperResult {
   items: Product[];
   count: number;
+  hasMore?: boolean;
+  _extra?: Product[];
+  _totalAvailable?: number;
+  displayLimit?: number;
 }
 
 export default function SearchCard() {
@@ -75,6 +79,17 @@ export default function SearchCard() {
     }
   };
 
+  const handleShowMore = () => {
+    if (!results || !results._extra) return;
+    setResults({
+      ...results,
+      items: [...results.items, ...results._extra],
+      count: results.items.length + results._extra.length,
+      hasMore: false,
+      _extra: undefined,
+    });
+  };
+
   return (
     <div className="search-root">
       <div className="search-hero">
@@ -119,7 +134,9 @@ export default function SearchCard() {
         <div>
           <DealCard deals={results.items.filter(i => i.isBestDeal)} />
 
-          <h3 className="results-count" aria-live="polite" role="status">Found {results.count} items</h3>
+          <h3 className="results-count" aria-live="polite" role="status">
+            Showing {results.count} of {results._totalAvailable || results.count} results
+          </h3>
           <div className="results-grid">
             {results.items.map((item) => (
               <div key={item.asin} className="product-card-item">
@@ -127,6 +144,21 @@ export default function SearchCard() {
               </div>
             ))}
           </div>
+
+          {results.hasMore && (
+            <div className="show-more-container">
+              <p className="show-more-hint">
+                {results._extra?.length} more results available
+              </p>
+              <button
+                className="show-more-btn"
+                onClick={handleShowMore}
+                aria-label="Show more results"
+              >
+                Show More Results
+              </button>
+            </div>
+          )}
         </div>
       )}
 
